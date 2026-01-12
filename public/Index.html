@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upload Gambar</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
+</head>
+
+<body class="bg-gray-100 dark:bg-black text-gray-900 dark:text-white min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-6">
+
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-6">
+    <div class="w-14 h-14 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-2xl">
+      ☁️
+    </div>
+
+    <button id="themeToggle" class="w-12 h-6 bg-gray-300 dark:bg-gray-700 rounded-full relative">
+      <span id="toggleDot"
+        class="absolute top-1 left-1 w-4 h-4 bg-white dark:bg-black rounded-full transition"></span>
+    </button>
+  </div>
+
+  <h1 class="text-2xl font-bold text-center">Upload Gambar</h1>
+  <p class="text-center text-gray-500 dark:text-gray-400 mt-2 mb-6">
+    Upload gambar dan tampilkan hasilnya
+  </p>
+
+  <!-- Drop Zone -->
+  <div id="dropZone"
+    class="border-2 border-dashed border-gray-400 dark:border-gray-600 rounded-2xl p-6 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+
+    <div class="text-3xl mb-2">⬆️</div>
+    <p class="font-medium">Seret & Lepas atau Klik</p>
+
+    <button id="selectBtn"
+      class="mt-4 px-6 py-3 rounded-xl bg-black text-white dark:bg-white dark:text-black font-semibold">
+      Pilih Gambar
+    </button>
+
+    <input type="file" id="fileInput" hidden accept="image/*"/>
+  </div>
+
+  <!-- Upload Button -->
+  <button id="uploadBtn" disabled
+    class="w-full mt-6 py-4 rounded-2xl bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed">
+    Upload
+  </button>
+
+  <!-- Preview -->
+  <div id="previewWrapper" class="mt-6 hidden">
+    <p class="text-sm mb-2 text-center text-gray-500 dark:text-gray-400">
+      Hasil Upload
+    </p>
+    <img id="previewImage"
+      class="w-full rounded-2xl border border-gray-300 dark:border-gray-700"/>
+  </div>
+
+</div>
+
+<script>
+/* Theme Toggle */
+const html = document.documentElement;
+const toggleDot = document.getElementById("toggleDot");
+
+function setTheme(t) {
+  if (t === "dark") {
+    html.classList.add("dark");
+    toggleDot.style.transform = "translateX(24px)";
+  } else {
+    html.classList.remove("dark");
+    toggleDot.style.transform = "translateX(0)";
+  }
+  localStorage.setItem("theme", t);
+}
+
+setTheme(localStorage.getItem("theme") || "light");
+document.getElementById("themeToggle").onclick = () =>
+  setTheme(html.classList.contains("dark") ? "light" : "dark");
+
+/* Upload Logic */
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("fileInput");
+const uploadBtn = document.getElementById("uploadBtn");
+const selectBtn = document.getElementById("selectBtn");
+
+let selectedFile = null;
+
+selectBtn.onclick = () => fileInput.click();
+fileInput.onchange = e => prepareFile(e.target.files[0]);
+
+dropZone.ondragover = e => e.preventDefault();
+dropZone.ondrop = e => {
+  e.preventDefault();
+  prepareFile(e.dataTransfer.files[0]);
+};
+
+function prepareFile(file) {
+  if (!file) return;
+  selectedFile = file;
+  uploadBtn.disabled = false;
+  uploadBtn.textContent = `Upload ${file.name}`;
+  uploadBtn.className =
+    "w-full mt-6 py-4 rounded-2xl bg-black dark:bg-white text-white dark:text-black cursor-pointer";
+}
+
+uploadBtn.onclick = async () => {
+  const formData = new FormData();
+  formData.append("file", selectedFile);
+
+  uploadBtn.textContent = "Mengunggah...";
+  uploadBtn.disabled = true;
+
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    document.getElementById("previewImage").src = data.imageUrl;
+    document.getElementById("previewWrapper").classList.remove("hidden");
+    uploadBtn.textContent = "Berhasil ✅";
+  } else {
+    alert(data.error || "Upload gagal");
+  }
+};
+</script>
+
+</body>
+  </html>
+  
