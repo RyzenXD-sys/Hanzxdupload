@@ -1,2 +1,0 @@
-# Hanzxdupload
-HanzXD upload 
